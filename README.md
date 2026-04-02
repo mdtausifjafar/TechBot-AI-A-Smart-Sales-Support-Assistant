@@ -6,9 +6,11 @@
 
 ## Video Demo
 
-Click below to watch the short demonstration on how **TechBot AI** handles inquiries!
+Click below for the short demonstration on how **TechBot AI** handles inquiries!
 
-[![Watch the TechBot AI Video Demo](./readme-media/TechBot%20AI%20(Desktop%20View).png)](https://github.com/mdtausifjafar/TechBot-AI-A-Smart-Sales-Support-Assistant/raw/main/readme-media/TechBot%20AI%20Demo.mp4)
+<div align="center">
+  [![Watch the TechBot AI Video Demo](./readme-media/TechBot%20AI%20(Desktop%20View).png)](https://github.com/mdtausifjafar/TechBot-AI-A-Smart-Sales-Support-Assistant/raw/main/readme-media/TechBot%20AI%20Demo.mp4)
+</div>
 
 ## Technologies Utilized
 
@@ -42,7 +44,9 @@ Whenever a customer types a message on the frontend, it is immediately sent to t
 
 To make this happen, the n8n backend processes the data through a series of specialized nodes:
 
-![n8n Workflow](./readme-media/n8n%20Workflow.png)
+<div align="center">
+  ![n8n Workflow](./readme-media/n8n%20Workflow.png)
+</div>
 
 **Step-by-step logic:**
 
@@ -61,15 +65,21 @@ The frontend communicates directly with the n8n backend using a RESTful POST req
 
 **Desktop View:** The spacious chat view for PC displays.
 
-![Desktop View](./readme-media/TechBot%20AI%20(Desktop%20View).png)
+<div align="center">
+  ![Desktop View](./readme-media/TechBot%20AI%20(Desktop%20View).png)
+</div>
 
 **Tablet View:** Optimized spacing and padding for tablet navigation.
 
-![Tablet View](./readme-media/TechBot%20AI%20(Tablet%20View).png)
+<div align="center">
+  ![Tablet View](./readme-media/TechBot%20AI%20(Tablet%20View).png)
+</div>
 
 **Mobile View:** A tightly compacted interface perfect for smaller phone screens.
 
-![Mobile View](./readme-media/TechBot%20AI%20(Mobile%20View).png)
+<div align="center">
+  ![Mobile View](./readme-media/TechBot%20AI%20(Mobile%20View).png)
+</div>
 
 ## Google Sheets Database Mapping
 
@@ -86,12 +96,16 @@ The system automatically tracks the entire customer conversations instantly and 
 **Sheet 1: Master Chatbot History**
 
 Sheet1 records the step-by-step history of every interaction so administrators can review the full context of a conversation at any time.
-![Sheet1 - Chatbot History](./readme-media/Google%20Sheets%20View%20(Sheet1%20-%20Chatbot%20History).png)
+<div align="center">
+  ![Sheet1 - Chatbot History](./readme-media/Google%20Sheets%20View%20(Sheet1%20-%20Chatbot%20History).png)
+</div>
 
 **Sheet 2: Confirmed Inquiries**
 
 Sheet2 is the clean, filtered list that isolated final, confirmed customer interactions (like when a customer clicks "YES" to confirm their order or booked a call).
-![Sheet2 - Confirmed Inquiry](./readme-media/Google%20Sheets%20View%20(Sheet2%20-%20Confirmed%20Inquiry).png)
+<div align="center">
+  ![Sheet2 - Confirmed Inquiry](./readme-media/Google%20Sheets%20View%20(Sheet2%20-%20Confirmed%20Inquiry).png)
+</div>
 
 _(**Note:** I have attached `TechBot AI Inquiry Sheet.xlsx` to the repository. You can use this template to skip formatting your own spreadsheet! I also left some of my previous test conversations inside it to show exactly how the logs are supposed to look.)_
 
