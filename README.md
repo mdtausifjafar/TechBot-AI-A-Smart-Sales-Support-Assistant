@@ -6,24 +6,22 @@
 
 ## Video Demo
 
-Watch this short demonstration to see how **TechBot AI** handles inquiries!
+Click below to watch the short demonstration on how **TechBot AI** handles inquiries!
 
-<video src="./readme-media/TechBot AI Demo.mp4" controls="controls" style="max-width: 100%;">
-  Your browser does not support the video tag.
-</video>
+[![Watch the TechBot AI Video Demo](./readme-media/TechBot%20AI%20(Desktop%20View).png)](https://github.com/mdtausifjafar/TechBot-AI-A-Smart-Sales-Support-Assistant/raw/main/readme-media/TechBot%20AI%20Demo.mp4)
 
 ## Technologies Utilized
 
-* **n8n**: The powerful workflow automation tool that acts as my main backend logic engine.
-* **HTML, CSS, JavaScript**: Used to create a beautiful, dynamic, and fully responsive custom frontend.
-* **Google Sheets OAuth**: Handles secure database connections to log conversations and capture orders.
-* **OpenAI-Compatible APIs**: For processing natural language. Tested using Groq's extremely fast inference APIs.
+- **n8n**: The powerful workflow automation tool that acts as my main backend logic engine.
+- **HTML, CSS, JavaScript**: Used to create a beautiful, dynamic, and fully responsive custom frontend.
+- **Google Sheets OAuth**: Handles secure database connections to log conversations and capture orders.
+- **OpenAI-Compatible APIs**: For processing natural language. Tested using Groq's extremely fast inference APIs.
 
 ## Project Structure
 
 ```text
 TechStore BD/
-├── assets/   
+├── assets/
 │   ├── AI Chatbot.svg               # Chatbot avatar graphic
 │   ├── Animated AI Chatbot.gif      # Animated illustration for interface
 │   └── TechStore BD.svg             # Store logo used in the interface
@@ -77,13 +75,13 @@ The frontend communicates directly with the n8n backend using a RESTful POST req
 
 The system automatically tracks the entire customer conversations instantly and stores data on Google Sheets. The standard headers used are:
 
-* **`Timestamp`**: The exact date and time the message was processed.
-* **`Session ID`**: A unique ID linking all messages sent by a single user in one session.
-* **`User Message`**: What the customer specifically typed or requested.
-* **`AI Reply`**: The exact response returned by the AI Chatbot.
-* **`Intent`**: The AI-classified action for the interaction (e.g., `inquiry`, `order`, `booking`, or `cancel`).
-* **`Status`**: Tracks if an order or booking is `pending`, `confirmed`, or `cancelled`.
-* **`Order Data`**: Formatted summary text containing the customer's delivery info, product names, and pricing.
+- **`Timestamp`**: The exact date and time the message was processed.
+- **`Session ID`**: A unique ID linking all messages sent by a single user in one session.
+- **`User Message`**: What the customer specifically typed or requested.
+- **`AI Reply`**: The exact response returned by the AI Chatbot.
+- **`Intent`**: The AI-classified action for the interaction (e.g., `inquiry`, `order`, `booking`, or `cancel`).
+- **`Status`**: Tracks if an order or booking is `pending`, `confirmed`, or `cancelled`.
+- **`Order Data`**: Formatted summary text containing the customer's delivery info, product names, and pricing.
 
 **Sheet 1: Master Chatbot History**
 
@@ -95,7 +93,7 @@ Sheet1 records the step-by-step history of every interaction so administrators c
 Sheet2 is the clean, filtered list that isolated final, confirmed customer interactions (like when a customer clicks "YES" to confirm their order or booked a call).
 ![Sheet2 - Confirmed Inquiry](./readme-media/Google%20Sheets%20View%20(Sheet2%20-%20Confirmed%20Inquiry).png)
 
-*(**Note:** I have attached `TechBot AI Inquiry Sheet.xlsx` to the repository. You can use this template to skip formatting your own spreadsheet! I also left some of my previous test conversations inside it to show exactly how the logs are supposed to look.)*
+_(**Note:** I have attached `TechBot AI Inquiry Sheet.xlsx` to the repository. You can use this template to skip formatting your own spreadsheet! I also left some of my previous test conversations inside it to show exactly how the logs are supposed to look.)_
 
 ## Quick Setup & Deployment Guide
 
@@ -103,26 +101,26 @@ For security, sensitive keys and webhooks have been anonymized in this public re
 
 **1. Configure the Frontend**
 
-* Open `frontend/techstore-chatbot.html`.
-* Search for the javascript variable `webhookUrl`.
-* Replace `http://localhost:5678/webhook/chatbot` with the live production URL of your active n8n webhook.
+- Open `frontend/techstore-chatbot.html`.
+- Search for the javascript variable `webhookUrl`.
+- Replace `http://localhost:5678/webhook/chatbot` with the live production URL of your active n8n webhook.
 
 **2. Configure Google Sheets**
 
-* Take the `TechBot AI Inquiry Sheet.xlsx` file and upload it into your Google Drive.
-* Open it and save it natively as a Google Sheet.
-* Copy the unique Sheet ID from the URL (the mix of random letters/numbers).
+- Take the `TechBot AI Inquiry Sheet.xlsx` file and upload it into your Google Drive.
+- Open it and save it natively as a Google Sheet.
+- Copy the unique Sheet ID from the URL (the mix of random letters/numbers).
 
 **3. Configure the n8n Workflow**
 
-* Import `n8n/AI Chatbot - TechStore BD.json` into your n8n workspace.
-* Check the HTTP Request node and replace:
-  * `YOUR_OPENAI_COMPATIBLE_API_URL_HERE` with your provider's chat completions endpoint.
-  * `YOUR_API_KEY_HERE` with your proper Authorization token (Bearer).
-  * `YOUR_MODEL_NAME_HERE` with your chosen model identifier.
-* Check all the **Google Sheets Nodes**. Connect your Google Sheets OAuth Credentials, and replace all instances of `YOUR_GOOGLE_SHEET_ID_HERE` with the Sheet ID you generated in Step 2.
+- Import `n8n/AI Chatbot - TechStore BD.json` into your n8n workspace.
+- Check the HTTP Request node and replace:
+  - `YOUR_OPENAI_COMPATIBLE_API_URL_HERE` with your provider's chat completions endpoint.
+  - `YOUR_API_KEY_HERE` with your proper Authorization token (Bearer).
+  - `YOUR_MODEL_NAME_HERE` with your chosen model identifier.
+- Check all the **Google Sheets Nodes**. Connect your Google Sheets OAuth Credentials, and replace all instances of `YOUR_GOOGLE_SHEET_ID_HERE` with the Sheet ID you generated in Step 2.
 
 ## Author
 
-* **Md. Tausif Jafar**
-* **Email** : [mdtausifjafar@gmail.com](mailto:mdtausifjafar@gmail.com)
+- **Md. Tausif Jafar**
+- **Email** : [mdtausifjafar@gmail.com](mailto:mdtausifjafar@gmail.com)
