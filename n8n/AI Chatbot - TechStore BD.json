@@ -1,0 +1,986 @@
+{
+  "name": "AI Chatbot - TechStore BD",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "7974b515-13c0-4a44-9a94-392754fe1113",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        22384,
+        21040
+      ],
+      "webhookId": "techstore-chatbot"
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const userMessage = $('Webhook').first().json.body.chatInput || \"\";\n  const rawSession = $('Webhook').first().json.headers['x-session-id'] || $('Webhook').first().json.body.sessionId;\n  const sessionId = rawSession ? rawSession : \"session_\" + Date.now();\n\n  const systemPrompt = `You are TechBot AI, the sales assistant for TechStore BD, a premium computer hardware store in Bangladesh. You are friendly, helpful, and knowledgeable.\n\nINTENT TAG RULE (MANDATORY):\nEvery reply must end with exactly one tag on its own line:\n[INTENT: inquiry]   for browsing, questions, greetings, product info\n[INTENT: order]     for placing a product order (any stage)\n[INTENT: booking]   for booking a consultation call (any stage)\n[INTENT: cancel]    for cancelling an order or booking (any stage)\n\nLANGUAGE RULES:\n- Write like a friendly human sales assistant\n- Never say: \"I've noted down\", \"I have noted\", \"As an AI\", \"I'll need to confirm it again\", \"Let me note that\", \"I've recorded\"\n- Use natural phrases: \"Got it!\", \"Sure!\", \"Perfect!\", \"Great!\"\n- Never ask for information the customer already gave in this conversation\n\nFORMATTING RULES:\n- Use **text** to bold important labels and field names\n- Never use any dashes, hyphens, or bullet markers of any kind\n- Never use decorative lines like ---- or ====\n- Never use ## or ### headers\n- Never use the em dash character\n- A blank line between paragraphs is fine\n\nPRODUCT ORDER FLOW:\n\nStep 1: Answer product questions accurately. The moment a customer says they want to buy or place an order, ask for ALL 5 required details in a single message:\nFull Name, Phone Number, Email Address, Delivery Address, and Quantity.\n\nAsk them all together like this:\n\"To place your order, I just need a few details from you:\nFull Name, Phone Number, Email Address, Delivery Address, and how many units you would like.\"\n\nIf the customer provides some but not all details, check what is still missing and ask ONLY for the missing ones together in one message. Never ask for something already given.\n\nStep 2: Once all 5 details are collected, show this summary and ask \"Please reply **YES** to confirm your order.\":\n\n**Order Summary**\n\n**Product:** [product name]\n**Quantity:** [number]\n**Name:** [full name]\n**Phone:** [phone number]\n**Email:** [email address]\n**Address:** [delivery address]\n**Total:** [price] BDT\n\nStep 3: When customer says YES, reply: \"Your order is confirmed! Our team will reach you within 1 hour about payment and delivery. Thank you for choosing TechStore BD!\"\nThen include the Order DATA block.\n\nCALL BOOKING FLOW:\n\nStep 1: The moment a customer wants to book a call, ask for ALL 6 required details in a single message:\nFull Name, Email Address, Preferred Date, Preferred Time, Platform (Zoom, Google Meet, or Phone Call), and the Reason for the call.\n\nAsk them all together like this:\n\"To book your call, I need a few details:\nFull Name, Email Address, Preferred Date and Time, your preferred platform (Zoom, Google Meet, or Phone Call), and the reason for the call.\"\n\nIf the customer provides some but not all details, check what is still missing and ask ONLY for the missing ones together in one message. Never ask for something already given.\n\nStep 2: Once all 6 details are collected, show this summary and ask \"Please reply **YES** to confirm your booking.\":\n\n**Booking Summary**\n\n**Name:** [full name]\n**Email:** [email address]\n**Date:** [preferred date]\n**Time:** [preferred time]\n**Platform:** [platform]\n**Reason:** [reason]\n\nStep 3: When customer says YES, reply: \"Your call is booked! Our team will confirm your appointment within 1 hour. Looking forward to speaking with you!\"\nThen include the Booking DATA block.\n\nCANCELLATION FLOW:\n\nStep 1: Find out what the customer wants to cancel (which product or booking). Ask for the reason if they have not given one.\n\nImportant: The reason must be a real, meaningful reason. If the customer says things like \"no reason\", \"I have no reason\", \"none\", \"just cancel\", \"n/a\", or any vague non-answer, do NOT accept it. Politely explain that a valid reason is required to process the cancellation and ask again. Examples of valid reasons: changed mind, found a better price elsewhere, ordered by mistake, going out of town, budget issue, does not need it anymore. Keep asking until a real reason is given.\n\nStep 2: Once you know what to cancel AND have the reason, show a cancellation summary and ask \"Please reply **YES** to confirm the cancellation.\":\n\nFor order cancellation:\n**Cancellation Summary**\n\n**Product:** [product name]\n**Quantity:** [number]\n**Name:** [customer name]\n**Phone:** [phone]\n**Email:** [email]\n**Address:** [address]\n**Total:** [total]\n**Reason:** [reason]\n\nFor booking cancellation:\n**Cancellation Summary**\n\n**Name:** [customer name]\n**Email:** [email]\n**Date:** [date]\n**Time:** [time]\n**Platform:** [platform]\n**Reason:** [reason]\n\nStep 3: When customer says YES, reply: \"Your [order/booking] has been successfully cancelled.\"\nThen include the Cancellation DATA block.\n\nDATA BLOCKS (include ONLY at Step 3 final confirmation, placed right before the [INTENT:] tag):\n\nCRITICAL DATA BLOCK RULES:\n- In CANCELLED_ORDER: the Product field must be the EXACT product name from the confirmed order. Do not paraphrase, shorten, or add words like \"keyboard\" or \"mouse\". Copy the name precisely as it was confirmed.\n- Never list multiple products on one Product line. If multiple products are cancelled separately, each gets its own DATA block.\n- The Total field must match the confirmed order total exactly.\n\nOrder confirmed:\n[[DATA_START]]\nORDER_CONFIRMED\nProduct: <exact product name>\nQuantity: <number>\nName: <customer full name>\nPhone: <phone number>\nEmail: <email address>\nAddress: <full delivery address>\nTotal: <price in BDT>\n[[DATA_END]]\n\nBooking confirmed:\n[[DATA_START]]\nSESSION_CONFIRMED\nName: <customer full name>\nEmail: <email address>\nDate: <preferred date>\nTime: <preferred time>\nPlatform: <Zoom / Google Meet / Phone Call>\nReason: <reason for call>\n[[DATA_END]]\n\nOrder cancelled:\n[[DATA_START]]\nCANCELLED_ORDER\nProduct: <exact product name from the confirmed order, copy it precisely>\nQuantity: <number>\nName: <customer full name>\nPhone: <phone number>\nEmail: <email address>\nAddress: <delivery address>\nTotal: <total>\nReason: <cancellation reason>\n[[DATA_END]]\n\nBooking cancelled:\n[[DATA_START]]\nCANCELLED_BOOKING\nName: <customer full name>\nEmail: <email address>\nDate: <date>\nTime: <time>\nPlatform: <platform>\nReason: <cancellation reason>\n[[DATA_END]]\n\nPRODUCT CATALOG (prices in BDT):\n\nLaptops:\nASUS ROG Strix G16: 145,000\nHP Pavilion 15: 72,000\nLenovo IdeaPad Slim 5: 58,000\nDell XPS 15: 180,000\nMacBook Air M2: 155,000\n\nMice:\nLogitech G502 X: 4,800\nRazer DeathAdder V3: 5,200\n\nKeyboards:\nCorsair K70: 8,500\nKeychron K2 V2: 6,200\n\nSTRICT RULES:\n- Only discuss products the customer asked about in this conversation\n- Never assume interest in a product not mentioned\n- Never invent product names, prices, or specifications\n- If a product is not in the catalog, say so and offer to help find an alternative\n- Never include the DATA block in Step 1 or Step 2, only at final confirmation (Step 3)\n- For cancellations: always go through Step 1 then Step 2 before outputting the DATA block\n`;\n\n  const staticData = $getWorkflowStaticData('global');\n  if (!staticData.sessions) staticData.sessions = {};\n  if (!staticData.sessions[sessionId]) staticData.sessions[sessionId] = [];\n  const history = staticData.sessions[sessionId];\n  history.push({ role: \"user\", content: userMessage });\n  if (history.length > 24) history.splice(0, history.length - 24);\n  staticData.sessions[sessionId] = history;\n\n  const messages = [\n    { role: \"system\", content: systemPrompt },\n    ...history.slice(-14)\n  ];\n\n  return [{ json: { userMessage, sessionId, messages } }];\n} catch (err) {\n  return [{ json: { userMessage: \"Error\", sessionId: \"error\", messages: [], error: err.message } }];\n}"
+      },
+      "id": "83a34e49-4be2-47ec-b158-6934de3c4336",
+      "name": "Build Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        22608,
+        21040
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_OPENAI_COMPATIBLE_API_URL_HERE",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer YOUR_API_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ \"model\": \"YOUR_MODEL_NAME_HERE\", \"messages\": $json.messages, \"temperature\": 0.3, \"max_tokens\": 800 }) }}",
+        "options": {}
+      },
+      "id": "6924eaae-7a0a-4d07-8749-9b8fce9675ce",
+      "name": "OpenAI Chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        22832,
+        21040
+      ],
+      "onError": "continue"
+    },
+    {
+      "parameters": {
+        "jsCode": "function getBDTimestamp() {\n  const now = new Date();\n  const bd = new Date(now.getTime() + (6 * 60 * 60 * 1000));\n  const h = bd.getUTCHours();\n  const ampm = h >= 12 ? 'PM' : 'AM';\n  const h12 = h % 12 || 12;\n  return String(bd.getUTCDate()).padStart(2,'0') + '-' +\n         String(bd.getUTCMonth()+1).padStart(2,'0') + '-' +\n         bd.getUTCFullYear() + ' ' +\n         h12 + ':' + String(bd.getUTCMinutes()).padStart(2,'0') + ':' +\n         String(bd.getUTCSeconds()).padStart(2,'0') + ' ' + ampm;\n}\nconst ts = getBDTimestamp();\n\nconst allItems = $input.all();\nif (!allItems || allItems.length === 0) {\n  return [{ json: { \"AI Reply\": \"Sorry, I couldn't get a response right now. Please try again.\", \"AI Reply Sheet\": \"Sorry, I couldn't get a response right now. Please try again.\", \"Intent\": \"inquiry\", \"Status\": \"error\", \"Order Data\": \"\", \"User Message\": \"\", \"Session ID\": \"\", \"Timestamp\": ts } }];\n}\n\ntry {\n  const upstreamError = $input.first().json.error;\n  if (upstreamError) {\n    const msg = typeof upstreamError === 'object' ? (upstreamError.message || JSON.stringify(upstreamError)) : String(upstreamError);\n    return [{ json: { \"AI Reply\": \"Sorry, the AI service is temporarily unavailable. Please try again.\", \"AI Reply Sheet\": \"Sorry, the AI service is temporarily unavailable. Please try again.\", \"Intent\": \"inquiry\", \"Status\": \"error\", \"Order Data\": \"\", \"User Message\": \"\", \"Session ID\": \"\", \"Timestamp\": ts, \"error\": msg } }];\n  }\n\n  const aiChoices = $input.first().json.choices;\n  if (!aiChoices || !aiChoices[0] || !aiChoices[0].message) {\n    return [{ json: { \"AI Reply\": \"Sorry, I'm having a temporary issue. Please try again.\", \"AI Reply Sheet\": \"Sorry, I'm having a temporary issue. Please try again.\", \"Intent\": \"inquiry\", \"Status\": \"error\", \"Order Data\": \"\", \"User Message\": \"\", \"Session ID\": \"\", \"Timestamp\": ts, \"error\": \"No AI response\" } }];\n  }\n\n  const aiText = aiChoices[0].message.content || \"\";\n  const buildNode = $('Build Messages');\n  const userMessage = buildNode.first().json.userMessage || \"\";\n  const sessionId = buildNode.first().json.sessionId || \"\";\n\n  // Update session history\n  const staticData = $getWorkflowStaticData('global');\n  if (!staticData.sessions) staticData.sessions = {};\n  if (!staticData.sessions[sessionId]) staticData.sessions[sessionId] = [];\n  staticData.sessions[sessionId].push({ role: \"assistant\", content: aiText });\n  if (staticData.sessions[sessionId].length > 24) {\n    staticData.sessions[sessionId].splice(0, staticData.sessions[sessionId].length - 24);\n  }\n\n  // Extract [INTENT: ...] tag\n  const intentMatch = aiText.match(/\\[INTENT:\\s*(booking|order|inquiry|cancel)\\]/i);\n  const intent = intentMatch ? intentMatch[1].toLowerCase().trim() : \"inquiry\";\n\n  // Extract [[DATA_START]]...[[DATA_END]] block\n  const dataBlockMatch = aiText.match(/\\[\\[DATA_START\\]\\]([\\s\\S]*?)\\[\\[DATA_END\\]\\]/i);\n  const dataBlock = dataBlockMatch ? dataBlockMatch[1].trim() : \"\";\n\n  // Determine status — now using specific cancel type tags\n  let status = \"pending\";\n  let cancelType = \"\";\n  if (/ORDER_CONFIRMED/i.test(dataBlock))    status = \"confirmed\";\n  else if (/SESSION_CONFIRMED/i.test(dataBlock)) status = \"confirmed\";\n  else if (/CANCELLED_ORDER/i.test(dataBlock))  { status = \"cancelled\"; cancelType = \"order\"; }\n  else if (/CANCELLED_BOOKING/i.test(dataBlock)){ status = \"cancelled\"; cancelType = \"booking\"; }\n\n  // Parse fields from DATA block\n  const getField = (block, key) => {\n    const m = block.match(new RegExp(String(key) + ':\\\\s*([^\\\\n]+)', 'i'));\n    return m ? m[1].trim() : \"\";\n  };\n  const f = {\n    product:  getField(dataBlock, 'Product'),\n    quantity: getField(dataBlock, 'Quantity'),\n    name:     getField(dataBlock, 'Name'),\n    phone:    getField(dataBlock, 'Phone'),\n    email:    getField(dataBlock, 'Email'),\n    address:  getField(dataBlock, 'Address'),\n    total:    getField(dataBlock, 'Total'),\n    date:     getField(dataBlock, 'Date'),\n    time:     getField(dataBlock, 'Time'),\n    platform: getField(dataBlock, 'Platform'),\n    reason:   getField(dataBlock, 'Reason'),\n  };\n\n  // Build Order Data string — multiline format for easy reading in Google Sheets\n  let orderData = \"\";\n  if (status === \"confirmed\" && intent === \"order\") {\n    orderData = [\n      \"Order Confirmed\",\n      \"Product: \"  + (f.product  || \"N/A\"),\n      \"Qty: \"      + (f.quantity || \"1\"),\n      \"Name: \"     + (f.name     || \"N/A\"),\n      \"Phone: \"    + (f.phone    || \"N/A\"),\n      \"Email: \"    + (f.email    || \"N/A\"),\n      \"Address: \"  + (f.address  || \"N/A\"),\n      \"Total: \"    + (f.total    || \"N/A\")\n    ].join(\"\\n\");\n  } else if (status === \"confirmed\" && intent === \"booking\") {\n    orderData = [\n      \"Booking Confirmed\",\n      \"Name: \"     + (f.name     || \"N/A\"),\n      \"Email: \"    + (f.email    || \"N/A\"),\n      \"Date: \"     + (f.date     || \"N/A\"),\n      \"Time: \"     + (f.time     || \"N/A\"),\n      \"Platform: \" + (f.platform || \"N/A\"),\n      \"Reason: \"   + (f.reason   || \"General inquiry\")\n    ].join(\"\\n\");\n  } else if (status === \"cancelled\" && cancelType === \"order\") {\n    orderData = [\n      \"Order Cancelled\",\n      \"Product: \"  + (f.product  || \"N/A\"),\n      \"Qty: \"      + (f.quantity || \"N/A\"),\n      \"Name: \"     + (f.name     || \"N/A\"),\n      \"Phone: \"    + (f.phone    || \"N/A\"),\n      \"Email: \"    + (f.email    || \"N/A\"),\n      \"Address: \"  + (f.address  || \"N/A\"),\n      \"Total: \"    + (f.total    || \"N/A\"),\n      \"Reason: \"   + (f.reason   || \"No reason specified\")\n    ].join(\"\\n\");\n  } else if (status === \"cancelled\" && cancelType === \"booking\") {\n    orderData = [\n      \"Booking Cancelled\",\n      \"Name: \"     + (f.name     || \"N/A\"),\n      \"Email: \"    + (f.email    || \"N/A\"),\n      \"Date: \"     + (f.date     || \"N/A\"),\n      \"Time: \"     + (f.time     || \"N/A\"),\n      \"Platform: \" + (f.platform || \"N/A\"),\n      \"Reason: \"   + (f.reason   || \"No reason specified\")\n    ].join(\"\\n\");\n  }\n\n  // Strip technical blocks from reply\n  const stripTechnical = (text) => text\n    .replace(/\\[\\[DATA_START\\]\\][\\s\\S]*?\\[\\[DATA_END\\]\\]/gi, \"\")\n    .replace(/\\[INTENT:\\s*\\w+\\]/gi, \"\")\n    .replace(/^[━=\\-_]{3,}\\s*$/gm, \"\")\n    .replace(/```[\\s\\S]*?```/g, \"\")\n    .replace(/^#{1,6}\\s/gm, \"\")\n    .replace(/—/g, \"\")\n    .replace(/^[-•*]\\s+/gm, \"\")\n    .replace(/\\n{3,}/g, \"\\n\\n\")\n    .trim();\n\n  // Frontend reply: keep **bold** for markdownToHtml rendering\n  let replyFrontend = stripTechnical(aiText);\n  if (!replyFrontend || replyFrontend.length < 5) {\n    replyFrontend = \"I'm here to help! What can I find for you today?\";\n  }\n\n  // Sheets reply: strip all markdown to plain readable text\n  let replySheet = stripTechnical(aiText)\n    .replace(/\\*\\*([^*]+?)\\*\\*/g, \"$1\")\n    .replace(/\\*([^*]+?)\\*/g, \"$1\")\n    .replace(/\\n{3,}/g, \"\\n\\n\")\n    .trim();\n  if (!replySheet || replySheet.length < 5) {\n    replySheet = \"I'm here to help! What can I find for you today?\";\n  }\n\n  return [{\n    json: {\n      \"AI Reply\":       replyFrontend,\n      \"AI Reply Sheet\": replySheet,\n      \"Intent\":         intent,\n      \"Status\":         status,\n      \"Cancel Type\":    cancelType,\n      \"Order Data\":     orderData,\n      \"User Message\":   userMessage,\n      \"Session ID\":     sessionId,\n      \"Timestamp\":      ts\n    }\n  }];\n\n} catch (err) {\n  return [{\n    json: {\n      \"AI Reply\":       \"Sorry, I'm having a temporary issue. Please try again.\",\n      \"AI Reply Sheet\": \"Sorry, I'm having a temporary issue. Please try again.\",\n      \"Intent\":         \"inquiry\",\n      \"Status\":         \"error\",\n      \"Cancel Type\":    \"\",\n      \"Order Data\":     \"\",\n      \"User Message\":   \"\",\n      \"Session ID\":     \"\",\n      \"Timestamp\":      getBDTimestamp(),\n      \"error\":          err.message\n    }\n  }];\n}"
+      },
+      "id": "8ab873e4-fb66-4b30-8aa3-dc789ff86160",
+      "name": "Parse & Clean Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        23056,
+        21040
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Intent }}",
+                    "rightValue": "order",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "95c4b75b-4e08-4686-a221-b7e531e256cb"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "order"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Intent }}",
+                    "rightValue": "booking",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c7cf8f60-c896-4229-aeb8-ed425cc41737"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "booking"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Intent }}",
+                    "rightValue": "cancel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "d1a8dd54-0404-46ab-9774-879cf43dce84"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "b441d676-2075-410c-8cdb-b1bcc6bbfd12",
+                    "leftValue": "={{ $json.Intent }}",
+                    "rightValue": "inquiry",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "inquiry"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "771dbb87-51c7-4211-958c-3765783ee5a7",
+      "name": "Route by Intent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        23296,
+        21008
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "order-branch-tag",
+              "name": "branch",
+              "value": "order_processing",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "7d1e0a2a-7d3d-4596-bd5b-1e5d0ad96860",
+      "name": "Order Branch",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        23520,
+        20752
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "booking-branch-tag",
+              "name": "branch",
+              "value": "booking_processing",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "b9021374-bc6d-4e8a-aae4-925cff81d988",
+      "name": "Booking Branch",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        23520,
+        20944
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cancel-branch-tag",
+              "name": "branch",
+              "value": "cancellation_processing",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "b9022f31-1266-4de8-ab05-95e02bfc7ec2",
+      "name": "Cancel Branch",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        23520,
+        21136
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "inquiry-branch-tag",
+              "name": "branch",
+              "value": "general_inquiry",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "8ba4982f-7ff3-498a-a34c-c8e6c4b53862",
+      "name": "Inquiry Branch",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        23520,
+        21328
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "id": "10b12de8-ace4-4ee0-8288-fdd01b234d8a",
+      "name": "Merge Branches",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        23744,
+        21008
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $json.Timestamp }}",
+            "Session ID": "={{ $json['Session ID'] }}",
+            "User Message": "={{ $json['User Message'] }}",
+            "AI Reply": "={{ $json['AI Reply Sheet'] }}",
+            "Intent": "={{ $json.Intent }}",
+            "Status": "={{ $json.Status }}",
+            "Order Data": "={{ $json['Order Data'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Session ID",
+              "displayName": "Session ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User Message",
+              "displayName": "User Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI Reply",
+              "displayName": "AI Reply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order Data",
+              "displayName": "Order Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        }
+      },
+      "id": "82a2bcd9-0270-4a5b-bec0-9dda370cf3a6",
+      "name": "Chat History Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        23968,
+        21040
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jo1pT8Zc8PV6IBnM",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "7cdec18d-ac84-4593-8bf1-7383ecf425b7",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        23264,
+        20848
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet2"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{$('Parse & Clean Output').first().json.Timestamp}}",
+            "Session ID": "={{$('Parse & Clean Output').first().json['Session ID']}}",
+            "User Message": "={{$('Parse & Clean Output').first().json['User Message']}}",
+            "AI Reply": "={{$('Parse & Clean Output').first().json['AI Reply Sheet']}}",
+            "Intent": "={{$('Parse & Clean Output').first().json.Intent}}",
+            "Status": "={{$('Parse & Clean Output').first().json.Status}}",
+            "Order Data": "={{$('Parse & Clean Output').first().json['Order Data']}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Session ID",
+              "displayName": "Session ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User Message",
+              "displayName": "User Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI Reply",
+              "displayName": "AI Reply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order Data",
+              "displayName": "Order Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        }
+      },
+      "id": "7c8e8533-f965-4f01-b2cf-6245bccc543a",
+      "name": "Confirmed Inquiry Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        24416,
+        21024
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jo1pT8Zc8PV6IBnM",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "status-is-confirmed",
+                    "leftValue": "={{ $json.Status }}",
+                    "rightValue": "confirmed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "confirmed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "status-is-cancelled",
+                    "leftValue": "={{ $json.Status }}",
+                    "rightValue": "cancelled",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancelled"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0e4eb9f6-117b-4f67-addb-c2062910594e",
+      "name": "Action Route (Inquiry)",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        24192,
+        21040
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Precisely delete the correct Sheet2 row when customer cancels.\n// Reads from Parse & Clean Output (not Action Route) to get all fields.\n// Uses multiple matching strategies to identify the right row.\n\nconst currentJson     = $('Parse & Clean Output').first().json;\nconst sessionId       = (currentJson['Session ID']  || '').trim();\nconst cancelType      = (currentJson['Cancel Type'] || '').trim().toLowerCase();\nconst cancelOrderData = (currentJson['Order Data']  || '');\nconst aiReply         = (currentJson['AI Reply']    || '');\n\nif (!sessionId || !cancelType) return [];\n\n// ── Extract cancelled product name from multiple sources ──────────────\n// Source 1: Order Data field built from the DATA block (most reliable)\nconst prodFromData = (() => {\n  const m = cancelOrderData.match(/Product:\\s*([^\\n]+)/i);\n  return m ? m[1].trim().toLowerCase() : '';\n})();\n\n// Source 2: Visible AI reply — look for product name in cancellation summary\nconst prodFromReply = (() => {\n  const m = aiReply.match(/Product:\\s*([^\\n<]+)/i);\n  return m ? m[1].replace(/<[^>]*>/g, '').trim().toLowerCase() : '';\n})();\n\n// Source 3: Total amount from Order Data (unique per product — reliable fallback)\nconst totalFromData = (() => {\n  const m = cancelOrderData.match(/Total:\\s*([^\\n]+)/i);\n  return m ? m[1].trim().toLowerCase() : '';\n})();\n\n// Use the most specific product name available\nconst cancelledProduct = prodFromData || prodFromReply;\n\n// ── Row matching function ──────────────────────────────────────────────\n// A row matches the cancelled product if:\n// - cancelledProduct is a substring of the row's product name (or vice versa)\n// - OR the total amounts match (fallback when names differ slightly)\nconst rowMatchesCancel = (rowData) => {\n  const rLow = rowData.toLowerCase();\n\n  // Extract product name and total from the sheet row\n  const rowProdMatch = rLow.match(/product:\\s*([^\\n]+)/);\n  const rowProd = rowProdMatch ? rowProdMatch[1].trim() : '';\n\n  const rowTotalMatch = rLow.match(/total:\\s*([^\\n]+)/);\n  const rowTotal = rowTotalMatch ? rowTotalMatch[1].trim() : '';\n\n  if (cancelledProduct) {\n    // Bidirectional substring check:\n    // Does the row's product contain the cancelled name? (e.g. row='Corsair K70 Keyboard', cancel='Corsair K70')\n    // Does the cancelled name contain the row's product? (e.g. cancel='Corsair K70 keyboard', row='Corsair K70')\n    const nameMatch = rowProd.includes(cancelledProduct) || cancelledProduct.includes(rowProd);\n    if (nameMatch && rowProd.length > 0) return true;\n\n    // Fallback: if name match fails but total matches, use that\n    if (totalFromData && rowTotal && rowTotal === totalFromData.toLowerCase()) return true;\n  } else {\n    // No product name at all — use total as sole identifier\n    if (totalFromData && rowTotal && rowTotal === totalFromData.toLowerCase()) return true;\n  }\n\n  return false;\n};\n\nconst allRows = $input.all();\n\nconst rowsToDelete = allRows\n  .filter(row => {\n    const rowSession = (row.json['Session ID'] || '').toString().trim();\n    const rowIntent  = (row.json['Intent']     || '').toString().trim().toLowerCase();\n    const rowStatus  = (row.json['Status']     || '').toString().trim().toLowerCase();\n    const rowData    = (row.json['Order Data'] || '').toString();\n\n    if (rowSession !== sessionId)   return false;\n    if (rowStatus  !== 'confirmed') return false;\n\n    if (cancelType === 'order') {\n      if (rowIntent !== 'order') return false;\n      return rowMatchesCancel(rowData);\n    }\n\n    if (cancelType === 'booking') {\n      if (rowIntent !== 'booking') return false;\n      return true;  // One booking per session — always matches\n    }\n\n    return false;\n  })\n  .map(row => {\n    const n = row.json['row_number'] || row.json['rowNumber'] || row.json['_rowNumber'];\n    return { json: { row_number: Number(n) } };\n  })\n  .filter(item => item.json.row_number && !isNaN(item.json.row_number))\n  .sort((a, b) => b.json.row_number - a.json.row_number);\n\nreturn rowsToDelete.length > 0 ? rowsToDelete : [];\n"
+      },
+      "id": "8c40820c-6628-48cc-9bdf-333d5d87adec",
+      "name": "Filter Cancelled Inquiry Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        24640,
+        21216
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet2",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "8b87b880-7331-4048-a690-b86900af4d54",
+      "name": "Read Cancelled Inquiry",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        24416,
+        21216
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jo1pT8Zc8PV6IBnM",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet2",
+          "mode": "name"
+        },
+        "startIndex": "={{ $json.row_number }}"
+      },
+      "id": "30c8ccac-ba42-40a2-a89a-8359e3ca5646",
+      "name": "Delete Cancelled Inquiry Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        24864,
+        21216
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jo1pT8Zc8PV6IBnM",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Dedup: when a new confirmation is written to Sheet2, delete the OLD row\n// for that SAME order/booking if it already exists (discount / detail update).\n// NEVER delete a different product's row or a booking when an order changes.\n\nconst currentJson  = $('Parse & Clean Output').first().json;\nconst sessionId    = (currentJson['Session ID'] || '').trim();\nconst intent       = (currentJson['Intent']     || '').trim().toLowerCase();\nconst currentData  = (currentJson['Order Data'] || '').trim();\n\nif (!sessionId || !currentData) {\n  return [];\n}\n\n// For ORDERS  : the unique key is the Product name.\n//   Same product re-confirmed (e.g. after discount or qty change) → replace.\n//   Different product → keep both rows.\n// For BOOKINGS: the unique key is the Session ID itself.\n//   A session has only ONE booking. Any re-confirmation (new date/time/platform)\n//   replaces the previous booking row regardless of what changed.\nconst getKey = (data, intentType) => {\n  if (intentType === 'order') {\n    const m = data.match(/Product:\\s*([^\\n]+)/i);\n    return m ? m[1].trim().toLowerCase() : '';\n  }\n  if (intentType === 'booking') {\n    // All bookings in a session share the same session key\n    return 'booking';\n  }\n  return '';\n};\n\nconst currentKey = getKey(currentData, intent);\nif (!currentKey) return [];\n\nconst allRows = $input.all();\n\nconst rowsToDelete = allRows\n  .filter(row => {\n    const rowSession = (row.json['Session ID'] || '').toString().trim();\n    const rowIntent  = (row.json['Intent']     || '').toString().trim().toLowerCase();\n    const rowStatus  = (row.json['Status']     || '').toString().trim().toLowerCase();\n    const rowData    = (row.json['Order Data'] || '').toString().trim();\n\n    if (rowSession !== sessionId)   return false;  // different session\n    if (rowIntent  !== intent)      return false;  // different type (order vs booking)\n    if (rowStatus  !== 'confirmed') return false;  // only remove confirmed rows\n    if (rowData    === currentData) return false;  // this IS the newly written row\n\n    // For orders: only remove if the row is the same product\n    const rowKey = getKey(rowData, rowIntent);\n    return rowKey !== '' && rowKey === currentKey;\n  })\n  .map(row => {\n    const n = row.json['row_number'] || row.json['rowNumber'] || row.json['_rowNumber'];\n    return { json: { row_number: Number(n) } };\n  })\n  .filter(item => item.json.row_number && !isNaN(item.json.row_number))\n  .sort((a, b) => b.json.row_number - a.json.row_number);\n\nreturn rowsToDelete.length > 0 ? rowsToDelete : [];\n"
+      },
+      "id": "f86e9e37-f797-4615-9c91-45ab4bb34a68",
+      "name": "Filter Duplicate Confirmed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        24640,
+        20832
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet2",
+          "mode": "name"
+        },
+        "startIndex": "={{ $json.row_number }}"
+      },
+      "id": "e60e18a6-72a7-4bbd-b3c0-194df154c2d8",
+      "name": "Delete Duplicate Confirmed",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        24864,
+        20832
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jo1pT8Zc8PV6IBnM",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet2",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "cd494dbd-ddb4-4168-a542-6bd606561343",
+      "name": "Read Confirmed Inquiry Data For Dedupe",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        24416,
+        20832
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jo1pT8Zc8PV6IBnM",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Build Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Messages": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat": {
+      "main": [
+        [
+          {
+            "node": "Parse & Clean Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Clean Output": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route by Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Intent": {
+      "main": [
+        [
+          {
+            "node": "Order Branch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Booking Branch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cancel Branch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Inquiry Branch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order Branch": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Branch": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Cancel Branch": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Inquiry Branch": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Merge Branches": {
+      "main": [
+        [
+          {
+            "node": "Chat History Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat History Data": {
+      "main": [
+        [
+          {
+            "node": "Action Route (Inquiry)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action Route (Inquiry)": {
+      "main": [
+        [
+          {
+            "node": "Confirmed Inquiry Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Confirmed Inquiry Data For Dedupe",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Cancelled Inquiry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Cancelled Inquiry Row": {
+      "main": [
+        [
+          {
+            "node": "Delete Cancelled Inquiry Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Cancelled Inquiry": {
+      "main": [
+        [
+          {
+            "node": "Filter Cancelled Inquiry Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Duplicate Confirmed": {
+      "main": [
+        [
+          {
+            "node": "Delete Duplicate Confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Confirmed Inquiry Data For Dedupe": {
+      "main": [
+        [
+          {
+            "node": "Filter Duplicate Confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e793c3be-48db-4aa5-9758-73849234ed68",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e753089fb5535eaa0b77de498aa23daea0e8dc55f9c045b442203d865119db39"
+  },
+  "id": "JtRM3Z0UEdZ8XdUN",
+  "tags": []
+}
