@@ -42,7 +42,7 @@ TechStore BD/
 
 Whenever a customer types a message on the frontend, it is immediately sent to the **n8n Automated Backend**. The backend identifies the user using a unique `Session ID` and retrieves their previous chat history. All of this context is bundled with a strict system prompt (telling the AI it is a TechStore BD assistant handling retail electronics) and sent to the **AI Model** (e.g., LLaMA 3.3). The AI processes the request, formulates a natural response, assigns an intent tag (like `[INTENT: order]`), and streams the answer back to the user within seconds. Concurrently, the backend automatically logs the entire chat history into **Sheet1**, and extracts only the confirmed orders and call bookings into **Sheet2** for instant fulfillment tracking!
 
-### Backend Architecture (n8n Workflow)
+## Backend Architecture (n8n Workflow)
 
 To make this happen, the n8n backend processes the data through a series of specialized nodes:
 
@@ -80,7 +80,7 @@ The frontend communicates directly with the n8n backend using a RESTful POST req
 **Mobile View:** A tightly compacted interface perfect for smaller phone screens.
 
 <p align="center">
-  <img src="./readme-media/TechBot%20AI%20(Mobile%20View).png" alt="Mobile View" width="400">
+  <img src="./readme-media/TechBot%20AI%20(Mobile%20View).png" alt="Mobile View" width="200">
 </p>
 
 ## Google Sheets Database Mapping
@@ -98,6 +98,7 @@ The system automatically tracks the entire customer conversations instantly and 
 **Sheet 1: Master Chatbot History**
 
 Sheet1 records the step-by-step history of every interaction so administrators can review the full context of a conversation at any time.
+
 <p align="center">
   <img src="./readme-media/Google%20Sheets%20View%20(Sheet1%20-%20Chatbot%20History).png" alt="Sheet1 - Chatbot History" width="800">
 </p>
@@ -105,6 +106,7 @@ Sheet1 records the step-by-step history of every interaction so administrators c
 **Sheet 2: Confirmed Inquiries**
 
 Sheet2 is the clean, filtered list that isolated final, confirmed customer interactions (like when a customer clicks "YES" to confirm their order or booked a call).
+
 <p align="center">
   <img src="./readme-media/Google%20Sheets%20View%20(Sheet2%20-%20Confirmed%20Inquiry).png" alt="Sheet2 - Confirmed Inquiry" width="800">
 </p>
